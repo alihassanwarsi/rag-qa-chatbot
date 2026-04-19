@@ -6,3 +6,5 @@ langchain-chroma
 pypdf
 chromadb
 streamlit
+sentence-transformers
+torch
