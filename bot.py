@@ -28,6 +28,7 @@ PROMPT = PromptTemplate(
     template=prompt_template,
     input_variables=["context", "question"]
 )
+
 def load_documents():
     pdf_path = "AI.pdf"
     loader = PyPDFLoader(pdf_path)
@@ -42,6 +43,7 @@ def split_text(documents):
         length_function=len,
         add_start_index=True
     )
+
     chunks = text_splitter.split_documents(documents)
     print(f"Created {len(chunks)} chunks")
     return chunks
@@ -56,15 +58,15 @@ def vector_store(chunks):
         embedding=embeddings,
         persist_directory="./chroma_db"
     )
+
     db.persist()
     print("Chroma DB created and persisted.")
     return db
 
 def create_qa_chain(db):
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-lite",
-        google_api_key=GEMINI_API_KEY,
-        temperature=0.3
+        model="gemini-3.5-flash-lite",
+        google_api_key=GEMINI_API_KEY
     )
 
     retriever = db.as_retriever(search_kwargs={"k":3})
@@ -72,7 +74,8 @@ def create_qa_chain(db):
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,
-        return_source_documents=True
+        return_source_documents=True,
+        chain_type_kwargs={"prompt": PROMPT}
     )
 
     return qa_chain
