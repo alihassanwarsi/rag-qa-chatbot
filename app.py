@@ -35,10 +35,6 @@ if prompt := st.chat_input("Ask something about the document"):
             result = st.session_state.qa_chain.invoke({"query": prompt})
             response = result["result"]
 
-            sources = set([str(doc.metadata.get('page', 'N/A')) for doc in result["source_documents"]])
-            source_text = f"\n\n*Sources: Page(s) {', '.join(sources)}*"
+            st.markdown(response)
 
-            full_response = response + source_text
-            st.markdown(full_response)
-
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    st.session_state.messages.append({"role": "assistant", "content": response})
