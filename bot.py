@@ -35,6 +35,8 @@ PROMPT = PromptTemplate(
     input_variables=["context", "question"]
 )
 
+CHROMA_DIR = "./chroma_db"
+
 def load_documents():
     pdf_path = "AI.pdf"
     loader = PyPDFLoader(pdf_path)
@@ -49,24 +51,28 @@ def split_text(documents):
         length_function=len,
         add_start_index=True
     )
-
     chunks = text_splitter.split_documents(documents)
     print(f"Created {len(chunks)} chunks")
     return chunks
 
-def vector_store(chunks):
-    embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
-    )
+def build_vector_store():
+    """Load existing Chroma DB if present, otherwise build it from the PDF.
+    Skips PDF loading/splitting entirely when the DB already exists."""
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-    db = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory="./chroma_db"
-    )
+    if os.path.exists(f"{CHROMA_DIR}/chroma.sqlite3"):
+        db = Chroma(persist_directory=CHROMA_DIR, embedding_function=embeddings)
+        print("Loaded existing Chroma DB.")
+    else:
+        docs = load_documents()
+        chunks = split_text(docs)
+        db = Chroma.from_documents(
+            documents=chunks,
+            embedding=embeddings,
+            persist_directory=CHROMA_DIR
+        )
+        print("Created and persisted Chroma DB.")
 
-    db.persist()
-    print("Chroma DB created and persisted.")
     return db
 
 def create_qa_chain(db):
@@ -75,7 +81,7 @@ def create_qa_chain(db):
         google_api_key=GEMINI_API_KEY
     )
 
-    retriever = db.as_retriever(search_kwargs={"k":3})
+    retriever = db.as_retriever(search_kwargs={"k": 3})
 
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
@@ -85,6 +91,10 @@ def create_qa_chain(db):
     )
 
     return qa_chain
+
+def initialize_qa_chain():
+    db = build_vector_store()
+    return create_qa_chain(db)
 
 def ask_question(qa_chain, query):
     result = qa_chain.invoke({"query": query})
@@ -97,10 +107,7 @@ def ask_question(qa_chain, query):
         print(f"- Page {doc.metadata.get('page', 'N/A')}")
 
 if __name__ == "__main__":
-    documents = load_documents()
-    chunks = split_text(documents)
-    db = vector_store(chunks)
-    qa_chain = create_qa_chain(db)
+    qa_chain = initialize_qa_chain()
 
     while True:
         query = input("\nAsk a question (or type 'exit'): ")
