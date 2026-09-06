@@ -8,6 +8,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
