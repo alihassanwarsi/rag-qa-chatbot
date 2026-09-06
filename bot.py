@@ -14,14 +14,20 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found. Check your .env file.")
 
-prompt_template = """Use the following context to answer the question.
+prompt_template = """You are a helpful document question-answering assistant.
 
-If the answer is not in the context, say: "I don't know based on the document."
+For casual conversation such as greetings, thanks, or simple small talk, respond naturally.
+
+For questions about the document, use the provided context to answer the question.
+If the answer to a document-related question is not found in the context, say:
+"I don't know based on the document."
 
 Context:
 {context}
 
-Question: {question}
+Question:
+{question}
+
 Answer:"""
 
 PROMPT = PromptTemplate(
